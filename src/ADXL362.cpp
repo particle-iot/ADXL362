@@ -94,7 +94,7 @@ ADXL362::ADXL362(int slaveSelectPin) : slaveSelectPin(uint16_t(slaveSelectPin)) 
 //  begin()
 //  Initial SPI setup, soft reset of device
 //
-void ADXL362::begin(slaveSelectPin) {
+void ADXL362::begin() {
   pinMode(slaveSelectPin, OUTPUT);
   SPI.begin();
   SPI.setDataMode(SPI_MODE0); //CPHA = CPOL = 0    MODE = 0
