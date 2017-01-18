@@ -1,7 +1,8 @@
 /* aDXL362 library by Richard Whitney <richard@particle.io>
  */
 
-#include "aDXL362.h"
+#include "ADXL362.h"
+#include <math.h>
 
 
 /*
@@ -63,29 +64,6 @@
 #define XL362_FILTER_CTL    0x2C
 #define XL362_POWER_CTL     0x2D
 #define XL362_SELF_TEST     0x2E
-
-/* Configuration values */
-
-#define XL362_FILTER_FLAG_2G 0b00000000
-#define XL362_FILTER_FLAG_4G 0b01000000
-#define XL362_FILTER_FLAG_8G 0b10000000
-
-#define XL362_FILTER_FLAG_HBW 0b10000
-#define XL362_FILTER_FLAG_FBW 0b00000
-
-#define XL362_FILTER_FLAG_ODR12  0b000
-#define XL362_FILTER_FLAG_ODR25  0b001
-#define XL362_FILTER_FLAG_ODR50  0b010
-#define XL362_FILTER_FLAG_ODR100 0b011
-#define XL362_FILTER_FLAG_ODR200 0b100
-#define XL362_FILTER_FLAG_ODR400 0b111
-
-#define XL362_POWER_FLAG_NOISE_NORMAL   0b000000
-#define XL362_POWER_FLAG_NOISE_LOW      0b010000
-#define XL362_POWER_FLAG_NOISE_ULTRALOW 0b100000
-
-#define XL362_POWER_FLAG_MEASURE_STANDBY 0b00
-#define XL362_POWER_FLAG_MEASURE_RUNING  0b10
 
 
 ADXL362::ADXL362(int slaveSelectPin) : slaveSelectPin(uint16_t(slaveSelectPin)) {}
@@ -269,29 +247,29 @@ void ADXL362::XYZmgtoRPT(int X, int Y, int Z, float &Rho, float &Phi, float &The
   Theta *= 180/M_PI;
 }
 
-void ADXL362::checkAllControlRegs(){
+void ADXL362::checkAllControlRegs(Print& output){
   //uint8_t filterCntlReg = SPIreadOneRegister(0x2C);
-  //uint8_t ODR = filterCntlReg & 0x07;  Serial.print("ODR = ");  Serial.println(ODR, HEX);
-  //uint8_t ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);      Serial.print("ACT_INACT_CTL_Reg = "); Serial.println(ACT_INACT_CTL_Reg, HEX);
+  //uint8_t ODR = filterCntlReg & 0x07;  output.print("ODR = ");  output.println(ODR, HEX);
+  //uint8_t ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);      output.print("ACT_INACT_CTL_Reg = "); output.println(ACT_INACT_CTL_Reg, HEX);
   digitalWrite(slaveSelectPin, LOW);
   SPI.transfer(0x0B);  // read instruction
   SPI.transfer(0x20);  // Start burst read at Reg 20
-  Serial.println("Start Burst Read of all Control Regs - Library version 6-24-2012:");
-  Serial.print("Reg XL362_THRESH_ACT_L   = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_THRESH_ACT_H   = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_TIME_ACT       = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_THRESH_INACT_L = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_THRESH_INACT_H = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_TIME_INACT_L   = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_TIME_INACT_H   = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_ACT_INACT_CTL  = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_FIFO_CONTROL   = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_FIFO_SAMPLES   = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_INTMAP1        = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_INTMAP2        = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_FILTER_CTL     = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_POWER_CTL      = B");   Serial.println(SPI.transfer(0x00), BIN);
-  Serial.print("Reg XL362_SELF_TEST      = B");   Serial.println(SPI.transfer(0x00), BIN);
+  output.println("Start Burst Read of all Control Regs - Library version 6-24-2012:");
+  output.print("Reg XL362_THRESH_ACT_L   = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_THRESH_ACT_H   = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_TIME_ACT       = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_THRESH_INACT_L = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_THRESH_INACT_H = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_TIME_INACT_L   = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_TIME_INACT_H   = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_ACT_INACT_CTL  = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_FIFO_CONTROL   = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_FIFO_SAMPLES   = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_INTMAP1        = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_INTMAP2        = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_FILTER_CTL     = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_POWER_CTL      = B");   output.println(SPI.transfer(0x00), BIN);
+  output.print("Reg XL362_SELF_TEST      = B");   output.println(SPI.transfer(0x00), BIN);
 
   digitalWrite(slaveSelectPin, HIGH);
 }
@@ -321,7 +299,7 @@ void ADXL362::setRange(uint8_t Range){
     break;
   }
 
-  temp = temp & 0b00111111 | Range;
+  temp = (temp & 0b00111111) | Range;
   SPIwriteOneRegister(XL362_FILTER_CTL, temp); // Write to XL362_FILTER_CTL
   delay(10);
 
@@ -341,7 +319,7 @@ void ADXL362::setBandwidth(uint8_t BandWidth){
   Serial.print(temp);
 #endif
 
-  temp = temp & 0b11101111 | BandWidth;
+  temp = (temp & 0b11101111) | BandWidth;
   SPIwriteOneRegister(XL362_FILTER_CTL, temp); // Write to XL362_FILTER_CTL
   delay(10);
 
@@ -361,7 +339,7 @@ void ADXL362::setOutputDatarate(uint8_t ODR){
   Serial.print(temp);
 #endif
 
-  temp = temp & 0b11111000 | ODR;
+  temp = (temp & 0b11111000) | ODR;
   SPIwriteOneRegister(XL362_FILTER_CTL, temp); // Write to XL362_FILTER_CTL
   delay(10);
 
@@ -381,7 +359,7 @@ void ADXL362::setNoiseLevel(uint8_t NoiseLevel){
   Serial.print(temp);
 #endif
 
-  temp = temp & 0b11001111  | NoiseLevel;
+  temp = (temp & 0b11001111) | NoiseLevel;
   SPIwriteOneRegister(XL362_POWER_CTL, temp); // Write to XL362_FILTER_CTL
   delay(10);
 

@@ -1,8 +1,5 @@
 #pragma once
 
-/* aDXL362 library by Richard Whitney <richard@particle.io>
- */
-
 // This will load the definition for common Particle variable types
 #include "Particle.h"
 
@@ -100,7 +97,7 @@ public:
 
   /**
    * Read the internal temperature.
-   * @return the internal temperature as a raw value. 
+   * @return the internal temperature as a raw value.
    */
   int16_t readTemp();
 
@@ -113,8 +110,13 @@ public:
   //    - Referenced, Absolute
   //    - Free Fall, Linked Mode, Loop Mode
 
+  /**
+   * diagnostic function to output the state of all registers to the given
+   * Print stream.
+   * @param output  The stream to output to. Default is serial
+   */
+  void checkAllControlRegs(Print& output=Serial);
 
-  void checkAllControlRegs();
 
   /**
    *  Modify range (+-2g +-4g +-8g - ADXL362 Datasheep Page 33
