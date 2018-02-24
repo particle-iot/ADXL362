@@ -51,6 +51,12 @@ public:
   int readZ16();
 
   /**
+   * Read the Temp sensor value using 16-bits.
+   * @return The 12-bit Temp register as a 16-bit value.
+   */
+  int readT16();
+
+  /**
    * Read the X-axis value using 8-bits.
    * @return The X-axis register as a 8-bit value.
    */
@@ -69,16 +75,40 @@ public:
   int readZ();
 
   /**
-   * Read the X, Y, Z axes and temperature data in a single operation. All values are
-   * 16-bits wide and  all values are sampled at the same time so the axes
-   * and temperature reading are consistent.
+   * Read the Temp sensor value using 8-bits.
+   * @return The 12-bit Temp register as a 8-bit value.
+   */
+  int readT();
+/**
+   * Read the internal temperature.
+   * @return the internal temperature as a raw value.
+   */
+  // int16_t readTemp();
+
+  /**
+   * Read the X, Y, Z axes and temperature data in a single operation.
+   * All values are 16-bits wide and all values are sampled and returned
+   * as 8-bit values at the same time so the axes and temperature readings are consistent.
    *
    * @param XData receives the X axis data
    * @param YData receives the Y axis data
    * @param ZData receives the Z axis data
    * @param Temperature receives the temperature
    */
-  void readXYZTData(short &XData, short &YData, short &ZData, float &Temperature);
+  //void readXYZTData(short &XData, short &YData, short &ZData, float &Temperature);
+  void readXYZT(short &XData, short &YData, short &ZData, short &TData);
+
+  /**
+   * Read the X, Y, Z axes and temperature data in a single operation.
+   * All values are 12-bits wide and all values are sampled and returned
+   * as 16-bit values at the same time so the axes and temperature readings are consistent.
+   *
+   * @param XData receives the X axis data
+   * @param YData receives the Y axis data
+   * @param ZData receives the Z axis data
+   * @param Temperature receives the temperature
+   */
+  void readXYZT16(int &XData, int &YData, int &ZData, int &TData);
 
   /**
   * Read the X, Y, Z axis data in a single operation. All values are
@@ -94,12 +124,6 @@ public:
    * Convert the X, Y and Z axis values to rotation angle.
    */
   void XYZmgtoRPT(int X, int Y, int Z, float &Rho, float &Phi, float &Theta);
-
-  /**
-   * Read the internal temperature.
-   * @return the internal temperature as a raw value.
-   */
-  int16_t readTemp();
 
   // need to add the following functions
   // void mapINT1(
