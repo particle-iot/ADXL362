@@ -19,6 +19,8 @@
  by pixelk
  Modified for Spark Core/Button October 2014
  by jenesaisdiq
+ Updated for Particle InternetButton February 2018
+ by csylvain
 
  */
 
@@ -113,7 +115,9 @@ void ADXL362::beginMeasure() {
 
 
 
-//reading off the 8-bit register as documented in the ADXL362 spec
+//
+//  readX(), readY(), readZ(), readT()
+//reading off the special 8-bit registers as documented in the ADXL362 spec
 //IMPORTANT to make it a signed 8-bit int so that the data is interpreted correctly
 int ADXL362::readX(){
   int8_t XDATA = SPIreadOneRegister(0x08);
@@ -142,9 +146,25 @@ int ADXL362::readZ(){
   return (int)ZDATA;
 }
 
+//Temperature only has a 12-bit sign extended to 16-bit version, so read both regs
+//@return 8 MSB to mimic the 8 MSB accelerometer registers
+int ADXL362::readT(){
+  int16_t TEMP = SPIreadTwoRegisters(XL362_TEMP_L);
+  TEMP = (TEMP & 0xfff0) >> 4; // grab 8 MSB plus SX bits
+  if (TEMP & 0x0f00) { // if SX bits == 1
+    TEMP &= 0x00ff; // use only the 8 data bits
+    TEMP *= -1; // and make it negative
+  }
+#ifdef ADXL362_DEBUG
+  Serial.print("\tTDATA = ");
+  Serial.println(TDATA);
+#endif
+  return (int)TDATA;
+}
+
 //
-//  readXData(), readYData(), readZData(), readTemp()
-//  Read X, Y, Z, and Temp registers
+//  readX16(), readY16(), readZ16(), readT16()
+//  Read 12-bit sign extended X, Y, Z, and Temp registers and return 16-bit values
 //
 int ADXL362::readX16(){
   int16_t XDATA = SPIreadTwoRegisters(XL362_XDATA_L);
@@ -173,18 +193,47 @@ int ADXL362::readZ16(){
   return ZDATA;
 }
 
-//Temperature only has a 16-bit version, so read two 8-bit regs
-//worth knowing that this is an INTERNAL temperature measurement, so doesn't reflect the environment accurately
-int16_t ADXL362::readTemp(){
-  int16_t TEMP = SPIreadTwoRegisters(XL362_TEMP_L);
+// Temp sensor returns a 12-bit value in two 8-bit regs with 4-bit sign extension
+//  worth knowing that this is an INTERNAL temperature measurement, so doesn't reflect
+//  the environment itself accurately, but is (or can be) used to increase acceleration sensor accuracy
+int ADXL362::readT16(){
+  int16_t TDATA = SPIreadTwoRegisters(XL362_TEMP_L);
 #ifdef ADXL362_DEBUG
   Serial.print("\tTEMP = ");
-  Serial.println(TEMP);
+  Serial.println(TDATA);
 #endif
-  return TEMP;
+  return TDATA;
 }
 
-void ADXL362::readXYZTData(short &XData, short &YData, short &ZData, float &Temperature){
+void ADXL362::readXYZT(short &XData, short &YData, short &ZData, short &TData){
+
+  // burst SPI read
+  // A burst read of all three axis is required to guarantee all measurements correspond to same sample time
+  digitalWrite(slaveSelectPin, LOW);
+
+  SPI.transfer(0x0B);  // read instruction
+  SPI.transfer(XL362_XDATA);  // Start at XData Reg
+  XData = SPI.transfer(0x00);
+  YData = SPI.transfer(0x00);
+  ZData = SPI.transfer(0x00);
+  digitalWrite(slaveSelectPin, HIGH);
+
+  digitalWrite(slaveSelectPin, LOW);
+  SPI.transfer(0x0B);  // read instruction
+  SPI.transfer(XL362_TEMP_L);  // Start at Temp Reg
+  TData = (SPI.transfer(0x00) & 0xf0) >> 4;
+  TData = TData + ((SPI.transfer(0x00) & 0x0f) << 4);
+  digitalWrite(slaveSelectPin, HIGH);
+
+#ifdef ADXL362_DEBUG
+  Serial.print("XDATA = "); Serial.print(XData);
+  Serial.print("\tYDATA = "); Serial.print(YData);
+  Serial.print("\tZDATA = "); Serial.print(ZData);
+  Serial.println("\tTDATA = "); Serial.println(TData);
+#endif
+}
+
+void ADXL362::readXYZT16(int &XData, int &YData, int &ZData, int &TData){
 
   // burst SPI read
   // A burst read of all three axis is required to guarantee all measurements correspond to same sample time
@@ -198,16 +247,16 @@ void ADXL362::readXYZTData(short &XData, short &YData, short &ZData, float &Temp
   YData = YData + ((short)SPI.transfer(0x00) << 8);
   ZData = SPI.transfer(0x00);
   ZData = ZData + ((short)SPI.transfer(0x00) << 8);
-  short RawTemperature = SPI.transfer(0x00);
-  RawTemperature = RawTemperature + ((short)SPI.transfer(0x00) << 8);
-  Temperature = (float)RawTemperature * 0.065;
+  TData = SPI.transfer(0x00);
+  TData = TData + ((short)SPI.transfer(0x00) << 8);
+  //Temperature = (float)RawTemperature * 0.065; // let InternetButton scale this. return raw value.
   digitalWrite(slaveSelectPin, HIGH);
 
 #ifdef ADXL362_DEBUG
-  Serial.print("XDATA = "); Serial.print(XData);
-  Serial.print("\tYDATA = "); Serial.print(YData);
-  Serial.print("\tZDATA = "); Serial.print(ZData);
-  Serial.println("\tTemperature = "); Serial.println(Temperature);
+  Serial.print("XDATA16 = "); Serial.print(XData);
+  Serial.print("\tYDATA16 = "); Serial.print(YData);
+  Serial.print("\tZDATA16 = "); Serial.print(ZData);
+  Serial.println("\tTDATA16 = "); Serial.println(TData);
 #endif
 }
 
